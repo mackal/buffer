@@ -1,0 +1,6 @@
+-O3
+-std=c++11
+-Llocal/lib
+-isystem local/include
+-lpthread
+-fno-omit-frame-pointer
