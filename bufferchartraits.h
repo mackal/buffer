@@ -1,41 +1,39 @@
-#ifndef BUFFER2_H
-#define BUFFER2_H
+#ifndef BUFFER4_H
+#define BUFFER4_H
 
 #include <cstring>
 #include <cassert>
 #include <cstdint>
 #include <string>
-#include <algorithm>
-#include <utility>
 
-class SerializeBuffer2 {
+class SerializeBuffer4 {
 public:
-    SerializeBuffer2() : m_buffer(nullptr), m_capacity(0), m_pos(0) {}
+    SerializeBuffer4() : m_buffer(nullptr), m_capacity(0), m_pos(0) {}
 
-    explicit SerializeBuffer2(size_t size) : m_capacity(size), m_pos(0)
-    { m_buffer = new unsigned char[size]; std::fill(m_buffer, m_buffer + size, 0); }
+    explicit SerializeBuffer4(size_t size) : m_capacity(size), m_pos(0)
+    { m_buffer = new unsigned char[size]; memset(m_buffer, 0, size); }
 
-    SerializeBuffer2(const SerializeBuffer2 &rhs) : m_buffer(new unsigned char[rhs.m_capacity]), m_capacity(rhs.m_capacity), m_pos(rhs.m_pos)
-    { std::copy(rhs.m_buffer, rhs.m_buffer + rhs.m_capacity, m_buffer); }
+    SerializeBuffer4(const SerializeBuffer4 &rhs) : m_buffer(new unsigned char[rhs.m_capacity]), m_capacity(rhs.m_capacity), m_pos(rhs.m_pos)
+    { memcpy(m_buffer, rhs.m_buffer, rhs.m_capacity); }
 
-    SerializeBuffer2 &operator=(const SerializeBuffer2 &rhs) {
+    SerializeBuffer4 &operator=(const SerializeBuffer4 &rhs) {
         if (this != &rhs) {
             delete[] m_buffer;
             m_buffer = new unsigned char[rhs.m_capacity];
             m_capacity = rhs.m_capacity;
             m_pos = rhs.m_pos;
-            std::copy(rhs.m_buffer, rhs.m_buffer + rhs.m_capacity, m_buffer);
+            memcpy(m_buffer, rhs.m_buffer, m_capacity);
         }
         return *this;
     }
 
-    SerializeBuffer2(SerializeBuffer2 &&rhs) : m_buffer(rhs.m_buffer), m_capacity(rhs.m_capacity), m_pos(rhs.m_pos) {
+    SerializeBuffer4(SerializeBuffer4 &&rhs) : m_buffer(rhs.m_buffer), m_capacity(rhs.m_capacity), m_pos(rhs.m_pos) {
         rhs.m_buffer = nullptr;
         rhs.m_capacity = 0;
         rhs.m_pos = 0;
     }
 
-    SerializeBuffer2 &operator=(SerializeBuffer2 &&rhs) {
+    SerializeBuffer4 &operator=(SerializeBuffer4 &&rhs) {
         if (this != &rhs) {
             delete[] m_buffer;
 
@@ -50,7 +48,7 @@ public:
         return *this;
     }
 
-    ~SerializeBuffer2() { delete[] m_buffer; }
+    ~SerializeBuffer4() { delete[] m_buffer; }
 
     void WriteUInt8(uint8_t v) {
         if (m_pos + sizeof(uint8_t) > m_capacity)
@@ -124,10 +122,10 @@ public:
 
     void WriteString(const char *str) {
         assert(str != nullptr);
-        auto len = strlen(str) + 1;
+        auto len = std::char_traits<char>::length(str) + 1;
         if (m_pos + len > m_capacity)
             Grow(m_capacity + len);
-        std::copy(str, str + len, m_buffer + m_pos);
+        memcpy(m_buffer + m_pos, str, len);
         m_pos += len;
     }
 
@@ -135,7 +133,7 @@ public:
         auto len = str.length() + 1;
         if (m_pos + len > m_capacity)
             Grow(m_capacity + len);
-        std::copy(str.c_str(), str.c_str() + len, m_buffer + m_pos);
+        memcpy(m_buffer + m_pos, str.c_str(), len);
         m_pos += len;
     }
 
@@ -145,7 +143,7 @@ public:
             Grow(m_capacity + len + sizeof(uint32_t));
         *(uint32_t *)(m_buffer + m_pos) = len;
         m_pos += sizeof(uint32_t);
-        std::copy(str, str + len, m_buffer + m_pos);
+        memcpy(m_buffer + m_pos, str, len);
         m_pos += len;
     }
 
@@ -160,17 +158,17 @@ public:
     size_t m_pos;
 };
 
-void SerializeBuffer2::Grow(size_t new_size)
+void SerializeBuffer4::Grow(size_t new_size)
 {
     assert(new_size > m_capacity);
     auto new_buffer = new unsigned char[new_size * 2];
-    std::fill(new_buffer, new_buffer + new_size * 2, 0);
+    memset(new_buffer, 0, new_size * 2);
 
     if (m_buffer)
-        std::copy(m_buffer, m_buffer + m_capacity, new_buffer);
+        memcpy(new_buffer, m_buffer, m_capacity);
     m_capacity = new_size * 2;
-    std::swap(m_buffer, new_buffer);
-    delete[] new_buffer;
+    delete[] m_buffer;
+    m_buffer = new_buffer;
 }
 
-#endif /* !BUFFER2_H */
+#endif /* !BUFFER4_H */

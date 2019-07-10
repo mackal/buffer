@@ -164,4 +164,4 @@ public:
     size_t m_pos;
 };
 
-#endif /* !BUFFER_H */
+#endif /* !BUFFER3_H */
